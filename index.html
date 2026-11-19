@@ -2,10 +2,12 @@
 <html lang="hu" translate="no">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="CRGG Radar – magyar kripto elemzés és bálnafigyelés: árfolyamok, BTC szintek, likvidációk, nagy tárcák mozgása.">
 <meta property="og:title" content="CRGG Radar – a piac radarja, arany szintekkel">
-<meta property="og:description" content="Magyar kripto elemzés és bálnafigyelés, 3 óránként frissülő adatokkal.">
+<meta property="og:description" content="Magyar kripto elemzés és bálnafigyelés, naponta frissülő adatokkal.">
 <meta property="og:url" content="https://crggradar.hu/">
 <meta property="og:type" content="website">
 <link rel="icon" type="image/svg+xml" href="ikon.svg">
@@ -204,6 +206,8 @@ button.chip{cursor:pointer;font:inherit;font-family:var(--f-mono);font-size:12px
 .netcmp .nc-h{color:var(--down)}
 /* gyerek-kalkulátor */
 .kid{margin-bottom:24px}
+.learn{margin:28px 0 24px}.learn-h{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:14px}.learn-h h2{margin:2px 0 0}
+.learn > section{margin-bottom:0}.learn > section[hidden]{display:none}
 .kid h2{font-size:clamp(20px,2.6vw,26px);text-wrap:balance}
 .kid .lead{color:var(--down);font-weight:600;font-size:16px;margin:6px 0 14px;max-width:70ch}
 .kid-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
@@ -427,6 +431,13 @@ footer{margin-top:36px;color:var(--dim);font-size:12px;display:flex;justify-cont
       </div>
   </section>
 
+  <div class="learn" id="tanulj">
+    <div class="learn-h">
+      <div><div class="eyebrow">Tanulj, mielőtt döntesz</div><h2>Kripto érthetően</h2></div>
+      <div class="chips learn-tabs" role="tablist" aria-label="Témák">
+        <button class="chip on" type="button" role="tab" data-t="kezdo">Kezdőknek</button><button class="chip" type="button" role="tab" data-t="teny">Tévhitek és tények</button><button class="chip" type="button" role="tab" data-t="rwa">RWA</button><button class="chip" type="button" role="tab" data-t="gyerek">Gyereknek</button>
+      </div>
+    </div>
   <section class="kezdo panel" id="kezdo" aria-label="Kripto kezdőknek">
     <div class="eyebrow">Most ismerkedsz vele?</div>
     <h2>Kripto 5 percben</h2>
@@ -555,6 +566,7 @@ footer{margin-top:36px;color:var(--dim);font-size:12px;display:flex;justify-cont
     </div>
     <p class="warn2">A múltbeli hozam nem garancia a jövőre, a feltételezett hozam pedig nem előrejelzés. A bitcoin ára évekig is eshet, akár 70–80%-ot is, és a befektetett összeg részben vagy egészben elveszhet. A számítás dollárárfolyamon alapul, a forint árfolyamváltozását nem tartalmazza. Gyerekmegtakarításnál érdemes a kriptót biztonságosabb eszközökkel (pl. Babakötvény) együtt használni. Nem befektetési tanács.</p>
   </section>
+  </div>
 
   <section class="section">
     <div class="sec-h"><h2>Figyelt tokenek</h2><span class="sub">ár USD-ben · 7 napos trend</span></div>
@@ -636,19 +648,19 @@ footer{margin-top:36px;color:var(--dim);font-size:12px;display:flex;justify-cont
           <div class="radar"><canvas id="radar" width="640" height="640" aria-label="Radar animáció"></canvas></div>
           <div class="meta-row" id="ls-meta"></div>
         </div>
-        <div>
+        <div id="w-cohort-box">
           <div class="eyebrow" style="color:var(--dim)">Okos pénz vs. tömeg · nettó irány pozícióméret szerint</div>
           <div class="callout" id="w-call"></div>
           <div id="cohort"></div>
           <div class="legend"><span style="--c:var(--down)">nettó short</span><span style="--c:var(--up)">nettó long</span></div>
         </div>
       </div>
-      <div class="grid2" style="margin-top:18px">
-        <div>
+      <div class="grid2" id="w-grid2" style="margin-top:18px">
+        <div id="w-trades-box">
           <div class="eyebrow" style="color:var(--dim)">Friss bálnakötések · legalább 1 millió $ · elmúlt 6 óra</div>
           <div class="wlist" id="w-trades"></div>
         </div>
-        <div>
+        <div id="w-pos-box">
           <div class="eyebrow" style="color:var(--dim)">Legnagyobb nyitott pozíciók · nem realizált eredménnyel</div>
           <div class="wlist" id="w-pos"></div>
         </div>
@@ -840,7 +852,12 @@ const short=a=>a?a.slice(0,6)+"…"+a.slice(-4):"–";
 const alink=a=>`<a href="https://hypurrscan.io/address/${a}" target="_blank" rel="noopener">${short(a)}</a>`;
 const tierHu=t=>(TIER_HU[t]||[t])[0];
 let wCoin="BTC";
-function renderCohort(p){
+function fixWhale(){const W=document.querySelector("#balnak .whale"),G=$("w-grid2"),P=$("w-pos-box");if(!W||!G||!P)return;
+  const hasC=$("cohort").children.length>0,hasT=$("w-trades").children.length>0;
+  $("w-cohort-box").hidden=!hasC;$("w-trades-box").hidden=!hasT;
+  if(!hasC){if(P.parentNode!==W)W.appendChild(P)}else if(P.parentNode!==G)G.appendChild(P);
+  G.hidden=!G.querySelector(":scope > div:not([hidden])");}
+function renderCohort(p){ if(!p)return;
   const tiers=p.tiers||[]; if(!tiers.length)return;
   window.__state.cohort={coin:p.coin,tiers:tiers.map(x=>({csoport:(TIER_HU[x.tier]||[x.label])[0],nettoIrany:+x.netBiasByNotional.toFixed(2)}))};
   $("cohort").innerHTML=tiers.map(x=>{const v=Math.max(-1,Math.min(1,x.netBiasByNotional||0)),w=Math.abs(v)*50,c=v>=0?"var(--up)":"var(--down)";
@@ -854,7 +871,7 @@ function renderCohort(p){
   $("w-call").innerHTML=msg.replace("tradereк","traderek");
   $("w-time").textContent="frissítve: "+fmtTime(Date.parse(p.asOf)||Date.now());
 }
-function renderTrades(p){
+function renderTrades(p){ if(!p)return;
   const tr=(p.trades||[]).slice(0,6);
   window.__state.whaleTrades={coin:p.coin,db:p.sourceCount,legnagyobb:tr[0]?.notional};
   $("w-trades").innerHTML=tr.length?tr.map(x=>{const b=x.buyer||{},s=x.seller||{};
@@ -963,12 +980,14 @@ document.querySelectorAll(".side-rain").forEach(c=>cryptoRain(c,14,18,.8));
 })();
 
 // pillanatkép azonnal
-renderMarkets(SNAP.markets);renderGlobal(SNAP.global);renderHype(SNAP.hype);renderBtc(SNAP.btc);stamp(SNAP.ts,false);renderDeriv(SNAP.deriv);renderCohort(SNAP.cohort);renderTrades(SNAP.trades);renderLS(SNAP.ls);
+const safe=(fn,...a)=>{try{fn(...a)}catch(e){console.warn("render",fn.name,e)}};
+safe(renderMarkets,SNAP.markets);safe(renderGlobal,SNAP.global);safe(renderHype,SNAP.hype);safe(renderBtc,SNAP.btc);safe(stamp,SNAP.ts,false);safe(renderDeriv,SNAP.deriv);
+if(SNAP.cohort)safe(renderCohort,SNAP.cohort);if(SNAP.trades)safe(renderTrades,SNAP.trades);if(SNAP.ls)safe(renderLS,SNAP.ls);
 
 // élő frissítés a néző CoinGecko connectorán keresztül
 (async()=>{
   try{
-    const mcp=await window.claude?.use?.("mcp"); if(!mcp){$("w-status").textContent="Adatok állapota: "+fmtTime(SNAP.ts)+" · 3 óránként frissül.";return;}
+    const mcp=await window.claude?.use?.("mcp"); if(!mcp){$("w-status").textContent="Adatok állapota: "+fmtTime(SNAP.ts)+" · naponta frissül.";return;}
     const S="CoinGecko",opt={refetchInterval:60000,cache:{staleTime:30000,gcTime:600000}};
     const at=r=>r.cache?.storedAt??Date.now();
     const pick=(r)=>{let p=r.payload;if(typeof p==="string"){try{p=JSON.parse(p)}catch(e){}}return p};
@@ -980,7 +999,7 @@ renderMarkets(SNAP.markets);renderGlobal(SNAP.global);renderHype(SNAP.hype);rend
     const errMsg={needs_reauth:"Jelentkezz be újra a Coinversa Pulse connectorba (claude.ai → Beállítások → Connectorok).",server_not_connected:"A Coinversa Pulse connector nincs bekötve ennél a nézőnél.",not_in_manifest:"A Coinversa Pulse nincs engedélyezve ezen az oldalon.",approval_required:"A bálnaadatokhoz engedélyezd a Coinversa Pulse-t ennek az oldalnak.",server_unavailable:"A Coinversa Pulse most nem elérhető, a legutóbbi adat látszik."};
     function watchWhales(){
       unsubs.forEach(u=>u());unsubs=[];
-      const h=fn=>ev=>{if(ev.type==="error"){$("w-status").textContent=errMsg[ev.error?.code]||"";return}const p=pj(ev.result);if(p&&!p.error){fn(p);keepW(fn,p);$("w-sub").textContent="Hyperliquid · Coinversa Pulse · élő";$("w-status").textContent=""}};
+      const h=fn=>ev=>{if(ev.type==="error"){$("w-status").textContent=errMsg[ev.error?.code]||"";return}const p=pj(ev.result);if(p&&!p.error&&!p.tierGate){fn(p);fixWhale();keepW(fn,p);$("w-sub").textContent="Hyperliquid · Coinversa Pulse · élő";$("w-status").textContent=""}};
       unsubs.push(mcp.watchTool(CV,"live_cohort_bias",{coin:wCoin,useToonFormat:false},h(renderCohort),wopt));
       unsubs.push(mcp.watchTool(CV,"live_whale_trades",{coin:wCoin,since:"6h",limit:6,useToonFormat:false},h(renderTrades),wopt));
       unsubs.push(mcp.watchTool(CV,"live_long_short_ratio",{coin:wCoin,useToonFormat:false},h(renderLS),wopt));
@@ -1001,7 +1020,7 @@ document.querySelectorAll("#w-tabs button").forEach(b=>b.addEventListener("click
 
 // ===== megosztott friss adat: a tulajdonos látogatásai frissítik mindenkinek =====
 const LIVE={},GOT=new Set();let SHARED=null,shareDoc=null,isOwner=false,shareTimer=null,lastShare=0;
-if(SNAP.whale)SHARED=SNAP;
+if(SNAP.whale){SHARED=SNAP;setTimeout(()=>{if(!GOT.has("whale:"+wCoin))safe(showSharedWhale,wCoin)},0)}
 function keep(k,v){LIVE[k]=v;GOT.add(k);scheduleShare()}
 function keepW(fn,p){const c=p.coin||wCoin;LIVE.whale=LIVE.whale||{};LIVE.whale[c]=LIVE.whale[c]||{};
   const k=fn===renderCohort?"cohort":fn===renderTrades?"trades":"ls";
@@ -1019,8 +1038,8 @@ function scheduleShare(){
   },wait);
 }
 function showSharedWhale(c){const w=SHARED?.whale?.[c];if(!w||GOT.has("whale:"+c))return false;
-  w.cohort&&renderCohort(w.cohort);w.trades&&renderTrades(w.trades);w.ls&&renderLS(w.ls);
-  $("w-status").textContent="Megosztott adat: "+fmtTime(SHARED.ts);return true}
+  $("cohort").innerHTML="";$("w-trades").innerHTML="";w.cohort&&renderCohort(w.cohort);w.trades&&renderTrades(w.trades);w.ls&&renderLS(w.ls);fixWhale();
+  $("w-status").textContent="";$("w-time").textContent="Adatok: "+fmtTime(SHARED.ts);return true}
 (async()=>{
   try{
     const [db,user]=await Promise.all([window.claude?.use?.("db"),window.claude?.use?.("user")]);
@@ -1040,6 +1059,16 @@ function showSharedWhale(c){const w=SHARED?.whale?.[c];if(!w||GOT.has("whale:"+c
   }catch(e){}
 })();
 
+
+// ===== tananyag fülek =====
+(()=>{const ids=["kezdo","teny","rwa","gyerek"],tabs=[...document.querySelectorAll(".learn-tabs button")];
+  const show=id=>{ids.forEach(i=>{const e=$(i);if(e)e.hidden=i!==id});tabs.forEach(t=>{const on=t.dataset.t===id;t.classList.toggle("on",on);t.setAttribute("aria-selected",on)})};
+  tabs.forEach(t=>t.addEventListener("click",()=>show(t.dataset.t)));
+  const fromHash=h=>{const id=(h||"").replace("#","");if(ids.includes(id)){show(id);return true}if(id==="kviz"){show("kezdo");return true}return false};
+  document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener("click",()=>fromHash(a.getAttribute("href"))));
+  window.addEventListener("hashchange",()=>fromHash(location.hash));
+  if(!fromHash(location.hash))show("kezdo");
+})();
 
 // ===== gyerek-kalkulátor =====
 (()=>{
@@ -1118,7 +1147,7 @@ function showSharedWhale(c){const w=SHARED?.whale?.[c];if(!w||GOT.has("whale:"+c
 (async()=>{
   const btn=$("ai-btn");
   const sample=await window.claude?.use?.("sample");
-  if(!sample){btn.hidden=true;if(SNAP.ai){$("ai-out").textContent=SNAP.ai;$("ai-status").textContent="AI összefoglaló · "+fmtTime(SNAP.ai_ts||SNAP.ts)+" · 3 óránként frissül · Nem befektetési tanács."}else{$("ai-status").textContent="Az AI összefoglaló a következő frissítéssel érkezik."}return}
+  if(!sample){btn.hidden=true;if(SNAP.ai){$("ai-out").textContent=SNAP.ai;$("ai-status").textContent="AI összefoglaló · "+fmtTime(SNAP.ai_ts||SNAP.ts)+" · naponta frissül · Nem befektetési tanács."}else{$("ai-status").textContent="Az AI összefoglaló a következő frissítéssel érkezik."}return}
   btn.addEventListener("click",async()=>{
     btn.disabled=true;$("ai-status").textContent="Claude írja az összefoglalót…";
     const st=window.__state;
